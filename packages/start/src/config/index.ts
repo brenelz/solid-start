@@ -7,6 +7,7 @@ import { StartServerManifest } from "solid-start:server-manifest";
 import { normalizePath, PluginOption, Rollup } from "vite";
 import solid, { Options as SolidOptions } from "vite-plugin-solid";
 
+import { loadEnvPlugin } from "../server/loadEnvPlugin.js";
 import { SolidStartClientFileRouter, SolidStartServerFileRouter } from "./fs-router.js";
 import { fsRoutes } from "./fs-routes/index.js";
 import {
@@ -39,7 +40,7 @@ const SolidStartServerFnsPlugin = createTanStackServerFnPlugin({
         fileURLToPath(new URL("../server/server-runtime.js", import.meta.url))
       )}"`,
     replacer: opts =>
-      `createServerReference(${() => { }}, '${opts.functionId}', '${opts.extractedFilename}')`
+      `createServerReference(${() => {}}, '${opts.functionId}', '${opts.extractedFilename}')`
   },
   ssr: {
     getRuntimeCode: () =>
@@ -172,10 +173,10 @@ function solidStartVitePlugin(options?: SolidStartOptions): Array<PluginOption> 
               "~": join(process.cwd(), start.appRoot),
               ...(!start.ssr
                 ? {
-                  "@solidjs/start/server": "@solidjs/start/server/spa",
-                  "@solidjs/start/client": "@solidjs/start/client/spa"
-                }
-                : {}),
+                    "@solidjs/start/server": "@solidjs/start/server/spa",
+                    "@solidjs/start/client": "@solidjs/start/client/spa"
+                  }
+                : {})
             }
           },
           define: {
@@ -246,23 +247,21 @@ function solidStartVitePlugin(options?: SolidStartOptions): Array<PluginOption> 
               ...(entry.css?.filter(Boolean) || [])
             ]
               .filter(
-                (asset) =>
-                  asset.endsWith(".css") ||
-                  asset.endsWith(".js") ||
-                  asset.endsWith(".mjs"),
+                asset => asset.endsWith(".css") || asset.endsWith(".js") || asset.endsWith(".mjs")
               )
-              .map((asset) => ({
-                tag: "link",
-                attrs: {
-                  href: join("/", CLIENT_BASE_PATH, asset),
-                  key: join("/", CLIENT_BASE_PATH, asset),
-                  ...(asset.endsWith(".css")
-                    ? { rel: "stylesheet", fetchPriority: "high" }
-                    : { rel: "modulepreload" }),
-                },
-              } satisfies ManifestAsset));
-            ;
-
+              .map(
+                asset =>
+                  ({
+                    tag: "link",
+                    attrs: {
+                      href: join("/", CLIENT_BASE_PATH, asset),
+                      key: join("/", CLIENT_BASE_PATH, asset),
+                      ...(asset.endsWith(".css")
+                        ? { rel: "stylesheet", fetchPriority: "high" }
+                        : { rel: "modulepreload" })
+                    }
+                  } satisfies ManifestAsset)
+              );
             acc[id] = { output: `/${CLIENT_BASE_PATH}/${entry.file}`, assets };
             return acc;
           }, {} as ClientManifest);
@@ -282,6 +281,7 @@ export default window.manifest;
         }
       }
     },
+    loadEnvPlugin({ root: process.cwd() }),
     nitroPlugin({ root: process.cwd() }, () => ssrBundle, start.server),
     {
       name: "solid-start:capture-client-bundle",
