@@ -16,6 +16,7 @@ import { handleServerFunction } from "./server-functions-handler.js";
 import { getClientEntryCssTags } from "./server-manifest.js";
 import { APIEvent, FetchEvent, HandlerOptions, PageEvent } from "./types.js";
 // import { createProdManifest } from "./prodManifest.js";
+export { getServerFunctionMeta } from "../shared/serverFunction";
 export { StartServer } from "./StartServer.jsx";
 
 const SERVER_FN_BASE = "/_server";
